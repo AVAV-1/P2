@@ -5,23 +5,111 @@
 
 `default_nettype none
 
-module tt_um_example (
-    input  wire [7:0] ui_in,    // Dedicated inputs
-    output wire [7:0] uo_out,   // Dedicated outputs
-    input  wire [7:0] uio_in,   // IOs: Input path
-    output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
-    input  wire       ena,      // always 1 when the design is powered, so you can ignore it
-    input  wire       clk,      // clock
-    input  wire       rst_n     // reset_n - low to reset
+module tt_um_iir_biquad (
+    input  wire [7:0] ui_in,    // 8-bit filter input
+    output wire [7:0] uo_out,   // 8-bit filter output
+    input  wire [7:0] uio_in,   // Unused IO input
+    output wire [7:0] uio_out,  // Unused IO output
+    output wire [7:0] uio_oe,   // IO output enable
+    input  wire       ena,      // Enable
+    input  wire       clk,      // Clock
+    input  wire       rst_n     // Active-low reset
 );
 
-  // All output pins must be assigned. If not used, assign to 0.
-  assign uo_out  = ui_in + uio_in;  // Example: ou_out is the sum of ui_in and uio_in
-  assign uio_out = 0;
-  assign uio_oe  = 0;
+  // ============================================================
+  // IIR Biquad Coefficients
+  // Q1.7 fixed-point format
+  // ============================================================
 
-  // List all unused inputs to prevent warnings
-  wire _unused = &{ena, clk, rst_n, 1'b0};
+  localparam signed [7:0] B0 = 8'sd37;
+  localparam signed [7:0] B1 = 8'sd75;
+  localparam signed [7:0] B2 = 8'sd37;
+
+  localparam signed [7:0] A1 = 8'sd0;
+  localparam signed [7:0] A2 = 8'sd22;
+
+
+  // ============================================================
+  // Delay registers
+  // ============================================================
+
+  reg signed [7:0] x1;
+  reg signed [7:0] x2;
+
+  reg signed [7:0] y1;
+  reg signed [7:0] y2;
+
+  reg signed [7:0] y;
+
+
+  // ============================================================
+  // Intermediate calculation
+  // ============================================================
+
+  reg signed [31:0] acc;
+
+
+  // ============================================================
+  // IIR Biquad Filter
+  // ============================================================
+
+  always @(posedge clk) begin
+
+    if (!rst_n) begin
+
+      x1  <= 8'sd0;
+      x2  <= 8'sd0;
+
+      y1  <= 8'sd0;
+      y2  <= 8'sd0;
+
+      y   <= 8'sd0;
+
+      acc <= 32'sd0;
+
+    end
+    else if (ena) begin
+
+      // Biquad difference equation
+      acc = (B0 * $signed(ui_in))
+          + (B1 * x1)
+          + (B2 * x2)
+          - (A1 * y1)
+          - (A2 * y2);
+
+      // Convert from Q1.7 fixed-point
+      y <= acc >>> 7;
+
+      // Delay input samples
+      x2 <= x1;
+      x1 <= $signed(ui_in);
+
+      // Delay output samples
+      y2 <= y1;
+      y1 <= acc >>> 7;
+
+    end
+
+  end
+
+
+  // ============================================================
+  // Outputs
+  // ============================================================
+
+  assign uo_out  = ena ? y : 8'b0;
+
+  assign uio_out = 8'b0;
+
+  assign uio_oe  = 8'b0;
+
+
+  // ============================================================
+  // Unused input
+  // ============================================================
+
+  wire _unused = &{uio_in, 1'b0};
 
 endmodule
+
+`default_nettype wire
