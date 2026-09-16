@@ -1,13 +1,12 @@
 # Tiny Tapeout project information
 project:
   title:        "2nd Order IIR Biquad Filter"
-  author:       "ARYA VARDHAN"
+  author:       "ARYA"
   discord:      ""
-  description:  "A digital 2nd order IIR biquad filter implemented using fixed-point arithmetic."
+  description:  "A digital 2nd order IIR biquad filter using fixed-point arithmetic."
   language:     "Verilog"
-  clock_hz:     50000000
+  clock_hz:     100000
 
-  # How many tiles your design occupies?
   tiles: "1x1"
 
   top_module:  "tt_um_iir_biquad"
@@ -38,14 +37,14 @@ pinout:
   uo[7]: "Output Bit 7"
 
   # Bidirectional pins
-  uio[0]: ""
-  uio[1]: ""
-  uio[2]: ""
-  uio[3]: ""
-  uio[4]: ""
-  uio[5]: ""
-  uio[6]: ""
-  uio[7]: ""
+  uio[0]: "Unused"
+  uio[1]: "Unused"
+  uio[2]: "Unused"
+  uio[3]: "Unused"
+  uio[4]: "Unused"
+  uio[5]: "Unused"
+  uio[6]: "Unused"
+  uio[7]: "Unused"
 
 # Do not change!
 yaml_version: 6
